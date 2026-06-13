@@ -206,10 +206,10 @@ export default function App() {
     const perfil = `Materia:${materia}|Objetivo:${objetivo||"general"}|Tiempo:${tiempo}h/sem|Nivel:${nivel||"?"}|Estilo:${estilos.length>0?estilos.join(", "):"?"}|Contexto:${contexto||"ninguno"}`;
     try {
       const [d1, d2] = await Promise.all([
-        callClaude(`Diseñador instruccional. Perfil: ${perfil}. Responde SOLO JSON sin markdown:
-{"titulo":"máx 8 palabras","descripcion":"1 oración","etapas":[{"numero":1,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":2,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":3,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":4,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":5,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]}],"tags":["t1","t2","t3","t4"],"consejo_final":"1-2 oraciones"}`),
-        callClaude(`Tema:"${materia}" Nivel:${nivel||"general"}. Responde SOLO JSON sin markdown:
-{"glosario":[{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"metodologia"},{"termino":"t","definicion":"1-2 oraciones","categoria":"herramienta"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"herramienta"},{"termino":"t","definicion":"1-2 oraciones","categoria":"metodologia"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"}],"metodologias":[{"icono":"🎯","nombre":"nombre específico para ${materia}","descripcion":"2 oraciones concretas sobre cómo este enfoque pedagógico aplica a ${materia}","tags":["t1","t2","t3"]},{"icono":"🗺️","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]},{"icono":"🛠️","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]},{"icono":"🔁","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]}]}`)
+        callClaude(`Eres un diseñador instruccional. SIEMPRE responde en español, sin importar el idioma del tema. Perfil: ${perfil}. Responde SOLO JSON sin markdown:
+{"titulo":"máx 8 palabras en español","descripcion":"1 oración en español","etapas":[{"numero":1,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":2,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":3,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":4,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]},{"numero":5,"titulo":"t","duracion":"X sem","descripcion":"2 oraciones","actividades":["a","b","c"]}],"tags":["t1","t2","t3","t4"],"consejo_final":"1-2 oraciones en español","fecha_inicio":"${new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}"}`),
+        callClaude(`Tema:"${materia}" Nivel:${nivel||"general"}. SIEMPRE responde en español. Responde SOLO JSON sin markdown:
+{"glosario":[{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"metodologia"},{"termino":"t","definicion":"1-2 oraciones","categoria":"herramienta"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"},{"termino":"t","definicion":"1-2 oraciones","categoria":"herramienta"},{"termino":"t","definicion":"1-2 oraciones","categoria":"metodologia"},{"termino":"t","definicion":"1-2 oraciones","categoria":"concepto"}],"metodologias":[{"icono":"🎯","nombre":"nombre específico para ${materia}","descripcion":"2 oraciones concretas en español","tags":["t1","t2","t3"]},{"icono":"🗺️","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]},{"icono":"🛠️","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]},{"icono":"🔁","nombre":"nombre","descripcion":"2 oraciones","tags":["t1","t2","t3"]}]}`)
       ]);
       clearInterval(iv);
       const rutaCompleta = { ...d1, glosario: d2.glosario, metodologias: d2.metodologias };
@@ -232,7 +232,7 @@ export default function App() {
       setLoadingFeedback(l => ({...l,[num]:true}));
       try {
         const etapa = ruta.etapas.find(e => e.numero === num);
-        const res = await callClaude(`Eres un tutor motivador. El estudiante${nombreConfirmado?" "+nombreConfirmado:""} acaba de completar la etapa "${etapa.titulo}" de su ruta sobre "${materia}". Genera un mensaje de retroalimentación breve (2-3 oraciones) que: 1) reconozca el logro específico de esta etapa, 2) destaque qué habilidad ganó, 3) motive para la siguiente etapa. Responde SOLO JSON: {"feedback":"mensaje aquí"}`, 400);
+        const res = await callClaude(`Eres un tutor motivador. SIEMPRE responde en español. El estudiante${nombreConfirmado?" "+nombreConfirmado:""} acaba de completar la etapa "${etapa.titulo}" de su ruta sobre "${materia}". Genera un mensaje de retroalimentación breve (2-3 oraciones) que: 1) reconozca el logro específico de esta etapa, 2) destaque qué habilidad ganó, 3) motive para la siguiente etapa. Responde SOLO JSON: {"feedback":"mensaje aquí"}`, 400);
         const newFb = { ...feedbacks, [num]: res.feedback };
         setFeedbacks(newFb);
         await persist(ruta, newProg, metodologias, newFb, nombreConfirmado, materia);
@@ -252,7 +252,7 @@ export default function App() {
     setChatLoading(true);
     try {
       const historial = newMsgs.slice(-6).map(m => `${m.role==="user"?"Estudiante":"Asistente"}: ${m.text}`).join("\n");
-      const res = await callClaude(`Eres un tutor experto en "${materia}" que responde dudas de estudiantes de forma clara, breve y motivadora. El estudiante${nombreConfirmado?" se llama "+nombreConfirmado:""} y su nivel es "${nivel||"general"}". Responde en máximo 3 oraciones. No uses markdown. Historial:\n${historial}\nResponde SOLO JSON: {"respuesta":"texto aquí"}`, 400);
+      const res = await callClaude(`Eres un tutor experto en "${materia}" que responde dudas de estudiantes de forma clara, breve y motivadora. SIEMPRE responde en español. El estudiante${nombreConfirmado?" se llama "+nombreConfirmado:""} y su nivel es "${nivel||"general"}". Responde en máximo 3 oraciones. No uses markdown. Historial:\n${historial}\nResponde SOLO JSON: {"respuesta":"texto aquí"}`, 400);
       setChatMsgs(m => [...m, { role:"assistant", text:res.respuesta }]);
     } catch(e) {
       setChatMsgs(m => [...m, { role:"assistant", text:"Hubo un error al conectar. Intenta de nuevo." }]);
@@ -264,7 +264,7 @@ export default function App() {
     setLoadingAutoeval(l => ({...l,[num]:"generando"}));
     try {
       const etapa = ruta.etapas.find(e => e.numero === num);
-      const res = await callClaude(`Eres un evaluador educativo. El estudiante está aprendiendo "${materia}" y acaba de estudiar la etapa "${etapa.titulo}". Genera 3 preguntas cortas de autoevaluación sobre los conceptos de esta etapa. Responde SOLO JSON: {"preguntas":["pregunta 1","pregunta 2","pregunta 3"]}`, 400);
+      const res = await callClaude(`Eres un evaluador educativo. SIEMPRE responde en español. El estudiante está aprendiendo "${materia}" y acaba de estudiar la etapa "${etapa.titulo}". Genera 3 preguntas cortas de autoevaluación sobre los conceptos de esta etapa. Responde SOLO JSON: {"preguntas":["pregunta 1","pregunta 2","pregunta 3"]}`, 400);
       setAutoevals(a => ({...a,[num]:{preguntas:res.preguntas, respuestas:["","",""], resultado:null, step:"respondiendo"}}));
     } catch(e) {}
     setLoadingAutoeval(l => ({...l,[num]:null}));
@@ -521,13 +521,39 @@ export default function App() {
 
                     <div style={s.tagRow}>{ruta.tags.map(t=><div key={t} style={s.tag}>{t}</div>)}</div>
                     <div style={s.divider}/>
+
+                    {/* RESUMEN DE PROGRESO */}
+                    <div style={{background:C.gris2,border:`1px solid ${C.gris3}`,borderRadius:12,padding:"16px 18px",marginBottom:12}}>
+                      <div style={{fontSize:"0.64rem",fontWeight:600,color:"#E8650A",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>Resumen de progreso</div>
+                      <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                        <div style={{textAlign:"center",flex:1}}>
+                          <div style={{fontSize:"1.6rem",fontWeight:900,fontFamily:"'Cabinet Grotesk',sans-serif",color:C.teal}}>{completadas}</div>
+                          <div style={{fontSize:"0.72rem",color:C.textoDim}}>Etapas completadas</div>
+                        </div>
+                        <div style={{textAlign:"center",flex:1}}>
+                          <div style={{fontSize:"1.6rem",fontWeight:900,fontFamily:"'Cabinet Grotesk',sans-serif",color:C.morado}}>{totalEtapas - completadas}</div>
+                          <div style={{fontSize:"0.72rem",color:C.textoDim}}>Etapas pendientes</div>
+                        </div>
+                        <div style={{textAlign:"center",flex:1}}>
+                          <div style={{fontSize:"1.6rem",fontWeight:900,fontFamily:"'Cabinet Grotesk',sans-serif",color:"#E8650A"}}>{pct}%</div>
+                          <div style={{fontSize:"0.72rem",color:C.textoDim}}>Avance total</div>
+                        </div>
+                      </div>
+                      {ruta.fecha_inicio && <div style={{fontSize:"0.7rem",color:C.textoDim,marginTop:10}}>Iniciado el {ruta.fecha_inicio}</div>}
+                    </div>
+
                     <div style={s.consejoBox}>
                       <div style={{fontSize:"0.64rem",fontWeight:600,color:C.morado,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Consejo para ti</div>
                       <p style={{fontSize:"0.84rem",lineHeight:1.65,color:C.textoDim}}>{ruta.consejo_final}</p>
                     </div>
                     <div style={s.actionsRow}>
                       <button style={s.btnSec} onClick={resetApp}>← Nueva ruta</button>
-                      <button style={s.btnPurple} onClick={()=>setView("asistente")}>Ir al Asistente 24/7 →</button>
+                      <button style={s.btnPurple} onClick={()=>setView("asistente")}>Asistente 24/7 →</button>
+                      <button style={{...s.btn, background:"#1A3A6B"}} onClick={()=>{
+                        const texto = `🎓 Mi ruta de aprendizaje en IntelIA\n\nTema: ${materia}\n${ruta.titulo}\n\n${ruta.etapas.map(e=>`${e.numero}. ${e.titulo} (${e.duracion})`).join('\n')}\n\nProgreso: ${completadas}/${totalEtapas} etapas (${pct}%)\n\nhttps://intelia-nu.vercel.app/`;
+                        if(navigator.share){navigator.share({title:'Mi Ruta IntelIA',text:texto});}
+                        else{navigator.clipboard.writeText(texto).then(()=>alert('¡Ruta copiada al portapapeles!'));}
+                      }}>Compartir ruta</button>
                     </div>
                   </div>
                 ) : null}
