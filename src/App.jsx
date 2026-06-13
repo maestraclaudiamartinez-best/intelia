@@ -11,19 +11,23 @@ const C = {
 const STORAGE_KEY = "intelia_v1";
 
 async function callClaude(prompt, maxTokens = 1500) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json",
-    "x-api-key": process.env.REACT_APP_ANTHROPIC_KEY || "" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.REACT_APP_ANTHROPIC_KEY || ""}`,
+      "HTTP-Referer": "https://intelia-nu.vercel.app",
+      "X-Title": "IntelIA"
+    },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "anthropic/claude-haiku-4-5",
       max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }]
     })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
-  const raw = data.content.map(i => i.text || "").join("");
+  const raw = data.choices?.[0]?.message?.content || "";
   const clean = raw.replace(/```json|```/g, "").trim();
   const start = clean.indexOf("{"); const end = clean.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("Respuesta inválida de la IA");
