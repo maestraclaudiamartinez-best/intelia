@@ -242,6 +242,14 @@ export default function App() {
       setChatMsgs([{ role:"assistant", text:`¡Hola${nombre?" "+nombre:""}! 👋 Soy tu asistente de **${materia}**. Estoy aquí 24/7 para resolver tus dudas sobre este tema. ¿En qué te puedo ayudar?` }]);
       await persist(rutaCompleta,{},d2.metodologias||{},{},nombre,materia);
       setScreen(4); window.scrollTo({top:0,behavior:"smooth"});
+      // Cargar videos de etapa 1 automáticamente
+      setTimeout(async () => {
+        const etapa1 = rutaCompleta.etapas[0];
+        if (etapa1) {
+          const results = await searchYouTube(`${materia} ${etapa1.titulo}`);
+          setVideos(v => ({...v, 1: results}));
+        }
+      }, 800);
     } catch(err) {
       clearInterval(iv); setError(err.message||"Error desconocido"); setScreen(4);
     }
