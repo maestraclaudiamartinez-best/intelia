@@ -49,6 +49,8 @@ async function searchYouTube(query) {
     }));
   } catch(e) { return []; }
 }
+
+const LOADING_MSGS = [
   "Analizando tu perfil…","Diseñando etapas…",
   "Generando glosario…","Creando metodologías…","Casi lista…"
 ];
