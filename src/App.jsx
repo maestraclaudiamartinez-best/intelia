@@ -34,7 +34,21 @@ async function callClaude(prompt, maxTokens = 1500) {
   return JSON.parse(clean.slice(start, end + 1));
 }
 
-const LOADING_MSGS = [
+async function searchYouTube(query) {
+  try {
+    const key = process.env.REACT_APP_YOUTUBE_KEY || "";
+    const q = encodeURIComponent(query + " tutorial educativo en español");
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=2&q=${q}&type=video&relevanceLanguage=es&key=${key}`);
+    const data = await res.json();
+    if (!data.items) return [];
+    return data.items.map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails.medium.url,
+      channel: item.snippet.channelTitle
+    }));
+  } catch(e) { return []; }
+}
   "Analizando tu perfil…","Diseñando etapas…",
   "Generando glosario…","Creando metodologías…","Casi lista…"
 ];
@@ -117,6 +131,11 @@ const s = {
   scoreRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 8 },
   scoreTrack: { flex: 1, height: 6, borderRadius: 3, background: C.gris3, overflow: "hidden" },
   scoreFill: (sc) => ({ height: "100%", borderRadius: 3, background: sc>=80?C.teal:sc>=50?"#f0c040":"#ff6b6b", width: `${sc}%`, transition: "width 0.6s ease" }),
+  videoCard: { display: "flex", gap: 10, background: C.negro, border: `1px solid ${C.gris3}`, borderRadius: 8, overflow: "hidden", marginBottom: 8, cursor: "pointer", textDecoration: "none" },
+  videoThumb: { width: 90, height: 60, objectFit: "cover", flexShrink: 0 },
+  videoInfo: { padding: "6px 10px 6px 0", flex: 1, minWidth: 0 },
+  videoTitle: { fontSize: "0.76rem", fontWeight: 600, color: C.blanco, lineHeight: 1.35, marginBottom: 3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" },
+  videoChannel: { fontSize: "0.66rem", color: C.textoDim },
 };
 
 export default function App() {
@@ -144,6 +163,8 @@ export default function App() {
   const [loadingFeedback, setLoadingFeedback] = useState({});
   const [autoevals, setAutoevals] = useState({}); // {num: {preguntas, respuestas, resultado, step}}
   const [loadingAutoeval, setLoadingAutoeval] = useState({});
+  const [videos, setVideos] = useState({});
+  const [loadingVideos, setLoadingVideos] = useState({});
   const [openEtapas, setOpenEtapas] = useState({ 1: true });
   const [openTerms, setOpenTerms] = useState({});
   const [glosarioSearch, setGlosarioSearch] = useState("");
@@ -295,8 +316,18 @@ export default function App() {
     setAutoevals(a => ({...a,[num]:null}));
   }
 
+  async function loadVideos(num) {
+    if (videos[num] || loadingVideos[num]) return;
+    setLoadingVideos(l => ({...l,[num]:true}));
+    const etapa = ruta.etapas.find(e => e.numero === num);
+    const query = `${materia} ${etapa.titulo}`;
+    const results = await searchYouTube(query);
+    setVideos(v => ({...v,[num]:results}));
+    setLoadingVideos(l => ({...l,[num]:false}));
+  }
+
   function resetApp() {
-    setRuta(null); setProgreso({}); setFeedbacks({}); setMetodologias([]); setAutoevals({});
+    setRuta(null); setProgreso({}); setFeedbacks({}); setMetodologias([]); setAutoevals({}); setVideos({});
     setNombre(""); setNombreConfirmado(""); setMateria(""); setObjetivo("");
     setTiempo(3); setNivel(""); setEstilos([]); setContexto("");
     setFromSave(false); setError(null); setChatMsgs([]);
@@ -453,8 +484,11 @@ export default function App() {
 
                     {ruta.etapas.map(e=>(
                       <div key={e.numero} style={s.etapaBlock(progreso[e.numero])}>
-                        <div style={s.etapaHdr} onClick={()=>setOpenEtapas(o=>({...o,[e.numero]:!o[e.numero]}))}>
-                          <div style={s.etapaNum(progreso[e.numero])}>{progreso[e.numero]?"✓":e.numero}</div>
+                        <div style={s.etapaHdr} onClick={()=>{
+                          const isOpening = !openEtapas[e.numero];
+                          setOpenEtapas(o=>({...o,[e.numero]:!o[e.numero]}));
+                          if (isOpening) loadVideos(e.numero);
+                        }}>                          <div style={s.etapaNum(progreso[e.numero])}>{progreso[e.numero]?"✓":e.numero}</div>
                           <div style={s.etapaTitle}>{e.titulo}</div>
                           <div style={s.etapaTime}>{e.duracion}</div>
                           <div style={s.checkBtn(progreso[e.numero])} onClick={ev=>{ev.stopPropagation();toggleProgreso(e.numero);}}>✓</div>
@@ -514,6 +548,22 @@ export default function App() {
                             {feedbacks[e.numero] && !loadingFeedback[e.numero] && (
                               <div style={s.feedbackBox}>✦ {feedbacks[e.numero]}</div>
                             )}
+
+                            {/* VIDEOS DE YOUTUBE */}
+                            <div style={{marginTop:14}}>
+                              <div style={{fontSize:"0.68rem",fontWeight:600,color:"#E8650A",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Videos recomendados</div>
+                              {loadingVideos[e.numero] && <div style={{fontSize:"0.78rem",color:C.textoDim}}>Buscando videos…</div>}
+                              {videos[e.numero]?.map(v=>(
+                                <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" style={s.videoCard}>
+                                  <img src={v.thumbnail} alt={v.title} style={s.videoThumb}/>
+                                  <div style={s.videoInfo}>
+                                    <div style={s.videoTitle}>{v.title}</div>
+                                    <div style={s.videoChannel}>{v.channel}</div>
+                                  </div>
+                                </a>
+                              ))}
+                              {videos[e.numero]?.length === 0 && <div style={{fontSize:"0.78rem",color:C.textoDim}}>No se encontraron videos para esta etapa.</div>}
+                            </div>
                           </div>
                         )}
                       </div>
